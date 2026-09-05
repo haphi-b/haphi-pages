@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Bellmaps">
+  <title>Bellmaps</title>
+  <rect x="1.1" y="1.1" width="97.8" height="97.8" rx="19" fill="#17140f" stroke="#6b5c3e" stroke-width="2.2"/>
+  <g fill="#e8e0cf">
+    <path d="M34.1 46.1 L65.9 46.1 L50 83.7 Z"/>
+    <circle cx="50" cy="36.5" r="18.5"/>
+  </g>
+  <circle cx="50" cy="36.5" r="7.4" fill="#e0483a"/>
+</svg>

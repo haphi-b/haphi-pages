@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "map": "karvenia_08",
+  "size": 8192,
+  "tileSize": 256,
+  "format": "webp",
+  "maxNativeZoom": 5,
+  "template": "tiles/{z}/{x}/{y}.webp",
+  "levels": [
+    {
+      "z": 0,
+      "grid": 1,
+      "tiles": 1,
+      "bytes": 9032,
+      "quality": 80
+    },
+    {
+      "z": 1,
+      "grid": 2,
+      "tiles": 4,
+      "bytes": 30200,
+      "quality": 80
+    },
+    {
+      "z": 2,
+      "grid": 4,
+      "tiles": 16,
+      "bytes": 94152,
+      "quality": 80
+    },
+    {
+      "z": 3,
+      "grid": 8,
+      "tiles": 64,
+      "bytes": 382986,
+      "quality": 80
+    },
+    {
+      "z": 4,
+      "grid": 16,
+      "tiles": 256,
+      "bytes": 1353188,
+      "quality": 80
+    },
+    {
+      "z": 5,
+      "grid": 32,
+      "tiles": 1024,
+      "bytes": 6051616,
+      "quality": 88
+    }
+  ],
+  "totalTiles": 1365,
+  "totalBytes": 7921174
+}
