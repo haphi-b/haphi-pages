@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>be haphi</title>
+	<style>
+		:root {
+			color-scheme: dark;
+			--bg: #0d0f12;
+			--fg: #e8eaed;
+			--muted: #8b9199;
+			--accent: #6ea8fe;
+			--surface: #16191e;
+			--border: #272c33;
+		}
+
+		* { box-sizing: border-box; }
+
+		html, body { height: 100%; }
+
+		body {
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 2rem;
+			padding: 2rem;
+			background: radial-gradient(ellipse at 50% -20%, #1b2029 0%, var(--bg) 60%);
+			color: var(--fg);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			text-align: center;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: clamp(2.5rem, 10vw, 4.5rem);
+			font-weight: 600;
+			letter-spacing: -0.03em;
+		}
+
+		p {
+			margin: 0;
+			color: var(--muted);
+			font-size: 1rem;
+			letter-spacing: 0.02em;
+		}
+
+		a.button {
+			display: inline-block;
+			padding: 0.85rem 2rem;
+			border: 1px solid var(--border);
+			border-radius: 999px;
+			background: var(--surface);
+			color: var(--fg);
+			font-size: 1rem;
+			font-weight: 500;
+			text-decoration: none;
+			transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+		}
+
+		a.button:hover,
+		a.button:focus-visible {
+			border-color: var(--accent);
+			color: var(--accent);
+			transform: translateY(-1px);
+		}
+
+		a.button:active { transform: translateY(0); }
+	</style>
+</head>
+<body>
+	<h1>be haphi</h1>
+	<p>Maps, made simple.</p>
+	<a class="button" href="https://haphi.net/bellmaps">To Bellmaps</a>
+</body>
+</html>
