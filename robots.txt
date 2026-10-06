@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://haphi.net/bellmaps/sitemap.xml
+Sitemap: https://haphi.net/sitemap.xml
