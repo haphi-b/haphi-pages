@@ -1,6 +1,6 @@
 // Wright Jobs service worker: network first, the last good copy when offline.
 // table.py fills in the build, so each new build replaces the cache.
-const CACHE = "wrightjobs-20261002123323";
+const CACHE = "wrightjobs-20261007194852";
 const FILES = ["./", "manifest.webmanifest", "favicon.png", "icon-192.png", "icon-512.png",
   "icon-maskable-512.png", "apple-touch-icon.png"];
 
