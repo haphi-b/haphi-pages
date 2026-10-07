@@ -64,7 +64,9 @@ header { padding: 1.2rem var(--gutter) .6rem; position: relative; }
 .input::placeholder { color: var(--bm-text-dim); }
 .input:focus-visible { outline: 1px solid var(--bm-gold); outline-offset: 1px; }
 .input.is-set { border-color: var(--bm-bronze); }
-.input--level { flex: none; width: 5.2rem; -moz-appearance: textfield; }
+.input--level { flex: none; width: 4rem; -moz-appearance: textfield; }
+.input--cmp { flex: none; width: 2rem; padding: .35rem 0; text-align: center; cursor: pointer; }
+.input--cmp:hover { color: var(--bm-accent); border-color: var(--bm-accent); }
 .input--level::-webkit-inner-spin-button, .input--level::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .bar { grid-column: 1 / -1; display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .count { color: var(--bm-text-dim); font-variant-numeric: tabular-nums; }
@@ -72,6 +74,8 @@ header { padding: 1.2rem var(--gutter) .6rem; position: relative; }
 .bm-button { font: inherit; color: var(--bm-text); border: 1px solid var(--bm-border); cursor: pointer;
   background: transparent; border-radius: 2px; padding: .3rem .8rem; }
 .bm-button:hover, .bm-button:focus-visible { color: var(--bm-accent); border-color: var(--bm-accent); }
+.bm-button[aria-pressed="true"] { color: var(--bm-accent); border-color: var(--bm-gold); background: #c8a85a2e; }
+.bm-button:disabled { opacity: .45; cursor: default; color: var(--bm-text); border-color: var(--bm-border); }
 .hint { color: var(--bm-text-dim); font-style: italic; font-family: var(--bm-font); font-size: 12px; }
 .hint--line { flex-basis: 100%; }             /* a line of its own in the filter bar */
 
@@ -122,17 +126,20 @@ tbody tr:hover td { background: #fff6e20a; }
 .use .lbl { color: var(--bm-accent); font-weight: 600; }
 .use .opt { color: var(--bm-text-dim); font-style: italic; font-size: 11px; }
 .none { color: #a99a7e80; }
+a.go { color: inherit; text-decoration: underline dotted #a99a7e80; text-underline-offset: 2px; }
+a.go:hover, a.go:focus-visible { color: var(--bm-gold); text-decoration-color: var(--bm-gold); }
 /* narrower than the table: scroll it sideways; sticky header and filters only when there is room */
 @media (max-width: 68rem) { .wrap { overflow-x: auto; } .filters { position: static; } thead th { position: static; } }
 </style>
 </head>
 <body>
 <header>
-  <span class="version" title="Version and build date">v1.3.0 · 2026-10-07</span>
+  <span class="version" title="Version and build date">v1.4.0 · 2026-10-07</span>
   <h1 class="title">Wright Jobs</h1>
   <p class="sub tagline">Find the Wright job for every villager.</p>
   <p class="sub">One row per job per building: what it makes, the skill level an NPC needs, the priority switch,
-    tools and inputs. Search any column; pick a suggestion or type part of a name.</p>
+    tools and inputs. Search any column; pick a suggestion or type part of a name (in "quotes": the exact name).
+    Underlined names lead to the rows that make them.</p>
 </header>
 
 <section class="filters" id="filters" aria-label="Filters">
@@ -142,8 +149,9 @@ tbody tr:hover td { background: #fff6e20a; }
     <input class="input" id="f-b" placeholder="e.g. Blacksmith" autocomplete="off"><ul class="suggest" hidden></ul></div>
   <div class="field" data-col="req"><label for="f-req">Skill needed</label>
     <div class="row"><input class="input" id="f-req" placeholder="e.g. Cooking" autocomplete="off">
-      <input class="input input--level" id="f-level" type="number" min="0" max="10" placeholder="≤ level"
-        title="Only jobs this skill level can do"></div><ul class="suggest" hidden></ul></div>
+      <button class="input input--cmp" id="f-cmp" type="button" aria-label="Level comparison">≤</button>
+      <input class="input input--level" id="f-level" type="number" min="0" max="10" placeholder="level"
+        title="Skill level 0–10"></div><ul class="suggest" hidden></ul></div>
   <div class="field" data-col="prio"><label for="f-prio">Priority</label>
     <input class="input" id="f-prio" placeholder="e.g. Hunting" autocomplete="off"><ul class="suggest" hidden></ul></div>
   <div class="field" data-col="tools"><label for="f-tools">Tools</label>
@@ -153,6 +161,8 @@ tbody tr:hover td { background: #fff6e20a; }
   <div class="bar">
     <span class="count" id="count"></span>
     <button class="bm-button" id="clear" type="button">Clear filters</button>
+    <button class="bm-button" id="exact" type="button" aria-pressed="false"
+      title="Exact names (in quotes) or parts of names, for all filters">Exact match</button>
     <span class="hint">Skill level: NPCs below it don't take the job; stations that don't check a level show none. Below it: what the skills do, from level 0 to 10. Priority: the NPC's switch for that job category must not be None; “+ Delivery” etc.: someone in the village needs that priority too, or the job stalls.</span>
     <span class="hint hint--line">Productivity: buffs add up, and the effect of a skill is multiplied by 1 + their sum (at least ×0.2).</span>
     <span class="hint hint--line">Productivity Influences: Food +20 % to +120 %, Morale −50 % to +35 %, Traits −50 % to +50 %, Winter −30 %.</span>
@@ -195,6 +205,12 @@ ROWS.forEach((r, i) => {
 });
 
 // ---- rendering ----
+// a name that has product rows of its own links to them (exact match, see query)
+const PRODS = new Set(ROWS.flatMap(r => r.prod.map(p => p.n)));
+function go(n) {
+  const p = PRODS.has(n) ? n : n.replace(/ \([^)]*\)$/, "");          // tools: "Rugged Axe (Str 2)"
+  return PRODS.has(p) ? `<a class="go" href="#prod=${encodeURIComponent(`"${p}"`)}">${esc(n)}</a>` : esc(n);
+}
 function fmtTime(s) {
   if (s == null) return '<span class="none">—</span>';
   if (Array.isArray(s)) return s[0] === s[1] ? fmtTime(s[0]) : `${fmtTime(s[0])} – ${fmtTime(s[1])}`;   // a random range
@@ -213,21 +229,23 @@ function cell(r) {
   const req = (r.req.length ? r.req.map(q => `<span class="chip">${esc(q.s)}${q.l != null ? ` <b>${q.l}</b>` : ""}</span>`).join("")
       : '<span class="none">—</span>') + r.uses.map(u => `<span class="dim">${esc(u)}</span>`).join("");
   const tools = r.tools.length
-      ? r.tools.map(t => `<span class="tool">${t.items.map(esc).join(" <span class=\"or\">or</span> ")}` +
-          (t.plus ? ` <span class="or">+</span> ${t.plus.map(esc).join(" <span class=\"or\">or</span> ")}` : "") + `</span>`)
+      ? r.tools.map(t => `<span class="tool">${t.items.map(go).join(" <span class=\"or\">or</span> ")}` +
+          (t.plus ? ` <span class="or">+</span> ${t.plus.map(go).join(" <span class=\"or\">or</span> ")}` : "") + `</span>`)
           .join('<span class="or alt">or</span>')
       : '<span class="none">—</span>';
   // fuel, feed, bait: the building's own slot, one labelled line below the inputs (any of the items)
   const use = (r.use || []).map(u => `<span class="use"><span class="lbl">${esc(u.k)}:</span> ` +
-      u.items.map(i => esc(i.n) + (i.note ? ` ${esc(i.note)}` : "")).join(' <span class="or">or</span> ') +
+      u.items.map(i => go(i.n) + (i.note ? ` ${esc(i.note)}` : "")).join(' <span class="or">or</span> ') +
       (u.opt ? ' <span class="opt">optional</span>' : "") + `</span>`).join("");
   const inp = (r.inp.length ? (r.inp_pre ? `${esc(r.inp_pre)} ` : "") +
       // a count of 1 stays hidden, except after a lead-in like "up to" (repairs)
-      r.inp.map(i => (i.q && (i.q !== 1 || r.inp_pre) ? `${esc(i.q)} ` : "") + esc(i.n) + (i.note ? ` ${esc(i.note)}` : "")).join(", ")
+      r.inp.map(i => (i.q && (i.q !== 1 || r.inp_pre) ? `${esc(i.q)} ` : "") + go(i.n) + (i.note ? ` ${esc(i.note)}` : "")).join(", ")
       : (use ? "" : '<span class="none">—</span>')) + use;
-  const bld = (r.b ? esc(r.b) : '<span class="none">—</span>') + (r.part ? `<span class="dim">part of ${esc(r.part)}</span>` : "") +
-      (r.also ? `<span class="dim">or ${r.also.map(esc).join(", ")}</span>` : "");
-  const res = r.res ? esc(r.res) + (r.res_b ? '<span class="dim">for the building</span>' : "")
+  const bld = (r.b ? go(r.b) : '<span class="none">—</span>') +
+      (r.part ? `<span class="dim">part of ${r.part.split(" / ").map(go).join(" / ")}</span>` : "") +
+      (r.also ? `<span class="dim">or ${r.also.map(go).join(", ")}</span>` : "");
+  // "Foraging Hut or Foraging Lodge": either one
+  const res = r.res ? (PRODS.has(r.res) ? go(r.res) : r.res.split(" or ").map(go).join(" or ")) + (r.res_b ? '<span class="dim">for the building</span>' : "")
       : '<span class="none">none</span>';
   return `<td>${prod}</td><td>${bld}</td><td>${req}</td>` +
     `<td class="prio">${r.prio ? esc(r.prio) : '<span class="none">—</span>'}` +
@@ -241,18 +259,30 @@ const tbody = document.getElementById("rows");
 const trs = ROWS.map(r => { const tr = document.createElement("tr"); tr.innerHTML = cell(r); return tr; });
 
 // ---- filtering ----
-const state = {prod: "", b: "", req: "", prio: "", tools: "", inp: "", level: null};
+const state = {prod: "", b: "", req: "", prio: "", tools: "", inp: "", level: null, cmp: "le"};
+// skill level comparison, cycled by the button left of the level box
+const CMP = {le: {sym: "≤", next: "eq", title: "Jobs this skill level can do"},
+             eq: {sym: "=", next: "ge", title: "Jobs that need exactly this skill level"},
+             ge: {sym: "≥", next: "le", title: "Jobs that need at least this skill level"}};
+// a filter in "quotes" is the exact name, else part of a name
+function query(v) {
+  const m = /^"(.*)"$/.exec(String(v ?? "").trim());
+  return m ? {q: low(m[1]), exact: true} : {q: low(v), exact: false};
+}
+const hit = (t, x) => x.exact ? t === x.q : t.includes(x.q);
 function passCol(r, c, v) {
   if (!v) return true;
-  const q = low(v);
-  return r.low[c].some(t => t.includes(q));
+  const x = query(v);
+  return r.low[c].some(t => hit(t, x));
 }
 function passLevel(r) {
   if (state.level == null) return true;
-  const q = low(state.req);
-  const reqs = r.req.filter(x => x.l != null && (!q || low(x.s).includes(q)));
-  if (q && !reqs.length) return false;
-  return reqs.every(x => x.l <= state.level);
+  const x = query(state.req);
+  const reqs = r.req.filter(q => q.l != null && (!x.q || hit(low(q.s), x)));
+  if (x.q && !reqs.length) return false;
+  if (state.cmp === "le") return reqs.every(x => x.l <= state.level);       // jobs this level can do
+  // jobs that need exactly / at least this level: only stations that check one
+  return reqs.some(x => state.cmp === "eq" ? x.l === state.level : x.l >= state.level);
 }
 function passes(r, except) {
   for (const c in TOKENS) if (c !== except && !passCol(r, c, state[c])) return false;
@@ -280,11 +310,13 @@ function readHash() {
   const lv = h.get("level");
   state.level = lv === null || lv === "" ? null : Math.max(0, Math.min(10, +lv));
   document.getElementById("f-level").value = state.level ?? "";
+  state.cmp = CMP[h.get("cmp")] ? h.get("cmp") : "le";
 }
 function writeHash() {
   const h = new URLSearchParams();
   for (const c of FIELDS) if (state[c]) h.set(c, state[c]);
   if (state.level != null) h.set("level", state.level);
+  if (state.cmp !== "le") h.set("cmp", state.cmp);
   const s = h.toString();
   history.replaceState(null, "", s ? "#" + s : location.pathname + location.search);
 }
@@ -302,12 +334,22 @@ function render() {
     inp.classList.toggle("is-set", !!state[f.dataset.col]);
   }
   document.getElementById("f-level").classList.toggle("is-set", state.level != null);
+  const cmp = document.getElementById("f-cmp");
+  cmp.textContent = CMP[state.cmp].sym;
+  cmp.title = CMP[state.cmp].title + " (click: ≤ = ≥)";
+  cmp.classList.toggle("is-set", state.level != null);
+  const exact = document.getElementById("exact");
+  exact.disabled = !setFields().length;
+  exact.setAttribute("aria-pressed", allExact());
   writeHash();
 }
+// "Exact match" follows what is typed: pressed when every filled-in filter is in quotes
+const setFields = () => FIELDS.filter(c => state[c]);
+const allExact = () => setFields().length > 0 && setFields().every(c => query(state[c]).exact);
 
 // ---- autocomplete ----
 function suggestions(col, text) {
-  const q = low(text), counts = new Map();
+  const q = query(text).q, counts = new Map();             // suggestions: part of a name, also in quotes
   for (const r of ROWS) {
     if (!passes(r, col)) continue;
     r.tok[col].forEach((t, k) => { if (!q || r.low[col][k].includes(q)) counts.set(t, (counts.get(t) || 0) + 1); });
@@ -354,9 +396,20 @@ document.getElementById("f-level").addEventListener("input", e => {
   state.level = v === "" ? null : Math.max(0, Math.min(10, +v));
   render();
 });
+document.getElementById("f-cmp").addEventListener("click", () => { state.cmp = CMP[state.cmp].next; render(); });
 document.getElementById("clear").addEventListener("click", () => {
-  for (const k in state) state[k] = k === "level" ? null : "";
+  for (const k in state) state[k] = k === "level" ? null : k === "cmp" ? "le" : "";
   document.querySelectorAll(".filters .input").forEach(i => i.value = "");
+  render();
+});
+// all filters exact (also from a mix), or all back to parts of names
+document.getElementById("exact").addEventListener("click", () => {
+  const on = !allExact();
+  for (const c of setFields()) {
+    const bare = state[c].trim().replace(/^"(.*)"$/, "$1");
+    state[c] = on ? `"${bare}"` : bare;
+    document.getElementById("f-" + c).value = state[c];
+  }
   render();
 });
 for (const th of document.querySelectorAll("th[data-sort]")) {
@@ -378,7 +431,8 @@ window.addEventListener("resize", setOffset);
 setOffset();
 
 readHash();
-window.addEventListener("hashchange", () => { readHash(); render(); });
+// a clicked name (or back): new filters, results from the top
+window.addEventListener("hashchange", () => { readHash(); render(); window.scrollTo(0, 0); });
 render();
 // installable app (served over http(s) only; a local file skips it)
 if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
